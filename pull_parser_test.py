@@ -1,4 +1,10 @@
+from xml.dom.minidom import Element
 from xml.dom.pulldom import CHARACTERS, START_ELEMENT, parseString, END_ELEMENT
+
+"""
+ XML pull parser and minidom demo
+ @author: Ronald Haentjens Dekker
+"""
 
 
 class Stack(list):
@@ -11,36 +17,40 @@ class Stack(list):
 source = """<rdg wit="#ipa">рускаꙗ землѧ <lb/>
                                 <add place="margin">и хто в неи почалъ пѣрвѣе кнѧжи<hi rend="sup"
                                         >т</hi></add>·:·</rdg>"""
-
+# init input
 doc = parseString(source)
-output = ""
+
+# init output
+output = Element("output")
+open_elements = Stack()
+open_elements.push(output)
 
 for event, node in doc:
+    # debug
+    # print(event, node)
     if event == START_ELEMENT:
         # skip rdg element
         if node.localName == "rdg":
             continue
         # in case of add deal with overlapping hierarchies
         if node.localName == "add":
+            # set type attribute to start and add node as a child to output
             node.setAttribute("type","start")
-        # TODO: toxml marks every element as />
-        # TODO: use stack of open elements
-        output += node.toxml()
-        # print(node)
-        # print(type(node))
-        print(event, node)
+            open_elements.peek().appendChild(node)
+        else:
+            open_elements.peek().appendChild(node)
+            open_elements.push(node)
     if event == END_ELEMENT:
         # skip rdg element
         if node.localName == "rdg":
             continue
         # in case of add deal with overlapping hierarchies
         if node.localName == "add":
-            node.setAttribute("type","end")
-        # TODO: toxml marks every element as />
-        # TODO: use stack of open elements
-        output += node.toxml()
-        # print(node)
-        # print(type(node))
-        print(event, node)
+            # create a clone of the node and set type attribute to end and add node as a child to output
+            clone = node.cloneNode(False)
+            clone.setAttribute("type","end")
+            open_elements.peek().appendChild(clone)
+        else:
+            open_elements.pop()
 
-print(output)
+print(output.toxml())
