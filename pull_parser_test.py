@@ -1,4 +1,5 @@
-from xml.dom.minidom import Element
+import re
+from xml.dom.minidom import Element, Text
 from xml.dom.pulldom import CHARACTERS, START_ELEMENT, parseString, END_ELEMENT
 
 """
@@ -13,6 +14,10 @@ class Stack(list):
 
     def peek(self):
         return self[-1]
+
+
+def tokenize(contents):
+    return re.findall("[.?!,;:]+[\\s]*|[^.?!,;:\\s]+[\\s]*", contents)
 
 source = """<rdg wit="#ipa">рускаꙗ землѧ <lb/>
                                 <add place="margin">и хто в неи почалъ пѣрвѣе кнѧжи<hi rend="sup"
@@ -40,7 +45,7 @@ for event, node in doc:
         else:
             open_elements.peek().appendChild(node)
             open_elements.push(node)
-    if event == END_ELEMENT:
+    elif event == END_ELEMENT:
         # skip rdg element
         if node.localName == "rdg":
             continue
@@ -52,5 +57,11 @@ for event, node in doc:
             open_elements.peek().appendChild(clone)
         else:
             open_elements.pop()
+    elif event == CHARACTERS:
+        tokens = tokenize(node.data)
+        if tokens:
+            t = Text()
+            t.data = "\n".join(tokens)
+            open_elements.peek().appendChild(t)
 
 print(output.toxml())
