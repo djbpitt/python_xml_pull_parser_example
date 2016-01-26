@@ -60,8 +60,11 @@ for event, node in doc:
     elif event == CHARACTERS:
         tokens = tokenize(node.data)
         if tokens:
-            t = Text()
-            t.data = "\n".join(tokens)
-            open_elements.peek().appendChild(t)
+            textdata = "\n".join(tokens)
+        else:
+            textdata = re.sub("[^\S\n]+", "", node.data)
+        t = Text()
+        t.data = textdata
+        open_elements.peek().appendChild(t)
 
 print(output.toxml())
